@@ -24,8 +24,14 @@ class Render:
             (node_a,node_b) = connection
             (col_a,row_a) = node_a.get_coords()
             (col_b,row_b) = node_b.get_coords()
-            point_a = ((col_a+2)*self.tile_size[0],(row_a+2)*self.tile_size[1])
-            point_b = ((col_b+2)*self.tile_size[0],(row_b+2)*self.tile_size[1])
+            if abs(col_a-col_b)<abs(row_a-row_b):
+                c_diff = 0.7
+                r_diff = 0
+            else:
+                c_diff = 0
+                r_diff = 0.7
+            point_a = ((col_a+2+c_diff)*self.tile_size[0],(row_a+2+r_diff)*self.tile_size[1])
+            point_b = ((col_b+2-c_diff)*self.tile_size[0],(row_b+2-r_diff)*self.tile_size[1])
             draw_line(point_a,point_b,"black",self.graphics_window)
         # render nodes
         for node in self.simulator.node_lst:
@@ -77,7 +83,7 @@ def draw_line(point_a,point_b,color,graphics_window):
     (col_b,row_b) = point_b
     a = graphics.Line(graphics.Point(col_a,row_a),graphics.Point(col_b,row_b))
     a.setFill(color)
-    a.setWidth(3)
+    a.setWidth(2)
     a.draw(graphics_window)
     
     

@@ -9,48 +9,52 @@ def finished():
     
 
 class Simulator:
-    def __init__(self,number_of_nodes,dimensions,img_size,node_range):
+    def __init__(self,dimensions,img_size):
         self.dimensions = dimensions
-        self.node_range = node_range
-        self.create_nodes(number_of_nodes)
-        self.create_connections()
+        self.node_lst = []
+        self.available_positions = []
+        for row in range(0,self.dimensions[1]-4,1):
+            for col in range(0,self.dimensions[0]-4,1):
+                self.available_positions.append((col,row))
         self.packet_lst = []
         self.dead_node_lst = []
         self.img_count = 0
         self.renderer = render.Render(self,dimensions,img_size)
-        self.renderer.render()
-        
-    def create_nodes(self,number_of_nodes):
-        self.node_lst = []
-        available_positions = []
-        for row in range(0,self.dimensions[1]-4,1):
-            for col in range(0,self.dimensions[0]-4,1):
-                available_positions.append((col,row))
+    
+    def define_nodes(self, max_range, min_range=0, battery_size=4):
+        self.node_max_range = max_range
+        self.node_min_range = min_range
+        self.node_battery_size = battery_size
+    
+    def spawn_nodes(self,number_of_nodes,min_distance=None,max_distance=None):
+        if min_distance == None: min_distance=(self.node_min_range+self.node_max_range)/2
+        if max_distance == None: max_distance=self.node_max_range
         for i in range(0,number_of_nodes):
             while True:
-                position = random.choice(available_positions)
-                if self.good_node_spawn_pos(position,self.node_lst):
+                position = random.choice(self.available_positions)
+                if Simulator.good_node_spawn_pos(position,self.node_lst,min_distance,max_distance):
                     break
-            available_positions.remove(position)
-            self.node_lst.append(Node(position))
+            self.available_positions.remove(position)
+            self.node_lst.append(Node(position,self.node_max_range,self.node_min_range,self.node_battery_size))
             print("node: "+str(i)+" at "+str(position))
+        self.create_connections()
     
     def create_connections(self):
         self.connection_lst = []
-        for node_a in self.node_lst:
-            for node_b in self.node_lst:
-                if self.neigbouring_nodes(node_a,node_b) and not ((node_b,node_a) in self.connection_lst or (node_a,node_b) in self.connection_lst):
-                    connection = (node_a,node_b)
+        for sender in self.node_lst:
+            for receiver in self.node_lst:
+                if Simulator.node_is_in_range(sender,receiver):
+                    connection = (receiver,sender)
                     self.connection_lst.append(connection)
-                    node_a.add_connection(connection)
-                    node_b.add_connection(connection)
+                    receiver.add_connection(connection)
+                    sender.add_connection(connection)
         self.sort_connections()
                     
     def sort_connections(self):
         sorted_lst = []
         distance_lst = []
         for connection in self.connection_lst:
-            distance_lst.append(distance_between_nodes(connection[0],connection[1]))
+            distance_lst.append(distance_between(connection[0],connection[1]))
         for i in range(0,len(self.connection_lst)):
             lst_index = 0
             for j in range(0,i):
@@ -59,20 +63,18 @@ class Simulator:
             sorted_lst.insert(lst_index,self.connection_lst[i])
         self.connection_lst = sorted_lst
                 
-    def neigbouring_nodes(self,node_a,node_b):
-        if node_a == node_b:
+    def node_is_in_range(sender,receiver):
+        if receiver == sender:
             return False
-        distance = distance_between_nodes(node_a,node_b)
-        return distance <= self.node_range
+        distance = distance_between(sender,receiver)
+        return distance <= sender.get_range()[0] and distance >= sender.get_range()[1]
     
-    def good_node_spawn_pos(self,position,node_lst):
-        min_distance = self.node_range/2
-        max_distance = self.node_range
+    def good_node_spawn_pos(position,node_lst,min_distance,max_distance):
         is_too_far = True
         for node in node_lst:
-            if distance_between_nodes(node,Node(position)) < min_distance:
+            if distance_between(node,position) < min_distance:
                 return False
-            if distance_between_nodes(node,Node(position)) < max_distance:
+            if distance_between(node,position) < max_distance:
                 is_too_far = False
         return (not is_too_far) or len(node_lst)==0
     
@@ -136,15 +138,18 @@ class Simulator:
             
 
 class Node:
-    def __init__(self,coords):
+    def __init__(self,coords,max_range,min_range,battery_size):
         self.coords = coords
-        self.battery_size = 4
+        self.max_range = max_range
+        self.min_range = min_range
+        self.battery_size = battery_size
         self.energy_level = 100*self.battery_size
         self.connections = []
         self.neighbours = []
         self.received_pkts = []
     
     def get_coords(self): return self.coords
+    def get_range(self): return (self.max_range,self.min_range)
     def get_energy_level(self): return int(self.energy_level/self.battery_size)
     def get_connections(self): return self.connections
     def get_neighbours(self): return self.neighbours
@@ -186,9 +191,15 @@ class Packet:
     def get_end_node(self): return self.end_node
     
     
-def distance_between_nodes(node_a,node_b):
-    (col_a,row_a) = node_a.get_coords()
-    (col_b,row_b) = node_b.get_coords()
+def distance_between(a,b):
+    if isinstance(a,Node):
+        (col_a,row_a) = a.get_coords()
+    else:
+        (col_a,row_a) = a
+    if isinstance(b,Node):
+        (col_b,row_b) = b.get_coords()
+    else:
+        (col_b,row_b) = b
     return math.hypot(col_a-col_b,row_a-row_b)
     
 

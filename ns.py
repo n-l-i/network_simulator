@@ -44,9 +44,9 @@ class Simulator:
         for sender in self.node_lst:
             for receiver in self.node_lst:
                 if Simulator.node_is_in_range(sender,receiver):
-                    connection = (receiver,sender)
+                    connection = (sender,receiver)
                     self.connection_lst.append(connection)
-                    receiver.add_connection(connection)
+                    #receiver.add_connection(connection)
                     sender.add_connection(connection)
         self.sort_connections()
                     
@@ -107,7 +107,7 @@ class Simulator:
                     
             for node in self.node_lst:
                 number_of_nodes = len(self.node_lst)+len(self.dead_node_lst)
-                random_number = random.choice(range(0,number_of_nodes*5))
+                random_number = random.choice(range(0,number_of_nodes*10))
                 if random_number>0:
                     continue
                 # lucky nodes will send a pkt
@@ -126,12 +126,14 @@ class Simulator:
             if node.is_out_of_power():
                 dead_nodes.append(node)
                 dead_connections = []
-                for connection in node.get_connections():
-                    dead_connections.append(connection)
+                for connection in self.connection_lst:
+                    if node in connection:
+                        dead_connections.append(connection)
                 for connection in dead_connections:
                     self.connection_lst.remove(connection)
-                    connection[0].remove_connection(connection)
-                    connection[1].remove_connection(connection)
+                    sender = connection[0]
+                    sender.remove_connection(connection)
+                    #connection[1].remove_connection(connection)
         for node in dead_nodes:
             self.dead_node_lst.append(node)
             self.node_lst.remove(node)
@@ -156,9 +158,13 @@ class Node:
     def get_received_pkts(self): return self.received_pkts
 
     def add_connection(self,connection):
+        if connection in self.connections:
+            return
         self.connections.append(connection)
         self.add_neighbour(connection[1-connection.index(self)])
     def remove_connection(self,connection):
+        if connection not in self.connections:
+            return
         self.connections.remove(connection)
         self.remove_neighbour(connection[1-connection.index(self)])
     def add_neighbour(self,neighbour): self.neighbours.append(neighbour)

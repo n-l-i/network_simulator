@@ -1,3 +1,3 @@
 [submodule "python_graphics"]
-	path = python_graphics
+	path = pythonGraphics
 	url = https://github.com/bbrzuszk/pythonGraphics

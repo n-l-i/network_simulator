@@ -15,6 +15,7 @@ class Render:
 
 
     def render(self):
+        #self.graphics_window.items[:]=[]
         # render background
         upper_left_corner = (0,0)
         lower_right_corner = (self.dimensions[0]*self.tile_size[0],self.dimensions[1]*self.tile_size[1])
@@ -25,15 +26,19 @@ class Render:
             string_value = string_value % 0xFFFF
             random_color = "#"+str(hex(string_value))[2:].zfill(6)
             self.render_connection(connection,random_color)
+            pass
         # render nodes
         for node in self.simulator.node_lst:
             self.render_node(node,"red")
+            pass
         for node in self.simulator.dead_node_lst:
             self.render_node(node,"grey")
+            pass
         # render packets
         for packet in self.simulator.packet_lst:
             connection = (packet.get_start_node(),packet.get_end_node())
             self.render_connection(connection,"magenta")
+            pass
             #self.render_node(packet.get_start_node(),"blue1")
             #self.render_node(packet.get_end_node(),"red4")
         graphics.update(30)

@@ -85,11 +85,8 @@ class Simulator:
         self.renderer.render()
         
     def update_packets(self):
-        dead_packets = []
-        for packet in self.packet_lst:
+        for packet in self.packet_lst[:]:
             packet.get_end_node().receive_pkt(packet)
-            dead_packets.append(packet)
-        for packet in dead_packets:
             self.packet_lst.remove(packet)
             
     def update_connections(self):
@@ -104,10 +101,9 @@ class Simulator:
                     packet = node.send_new_pkt(neighbour)
                     self.packet_lst.append(packet)
                     print("\tsending pkt: "+str(node.get_coords())+"-"+str(neighbour.get_coords()))
-                    
             for node in self.node_lst:
                 number_of_nodes = len(self.node_lst)+len(self.dead_node_lst)
-                random_number = random.choice(range(0,number_of_nodes*10))
+                random_number = random.choice(range(0,number_of_nodes*2))
                 if random_number>0:
                     continue
                 # lucky nodes will send a pkt
@@ -120,23 +116,16 @@ class Simulator:
                 print("\tsending pkt: "+str(node.get_coords())+"-"+str(neighbour.get_coords()))
                 
     def update_nodes(self):
-        dead_nodes = []
-        for node in self.node_lst:
+        for node in self.node_lst[:]:
             node.energy_consumption(1)
             if node.is_out_of_power():
-                dead_nodes.append(node)
-                dead_connections = []
-                for connection in self.connection_lst:
+                self.node_lst.remove(node)
+                self.dead_node_lst.append(node)
+                for connection in self.connection_lst[:]:
                     if node in connection:
-                        dead_connections.append(connection)
-                for connection in dead_connections:
-                    self.connection_lst.remove(connection)
-                    sender = connection[0]
-                    sender.remove_connection(connection)
-                    #connection[1].remove_connection(connection)
-        for node in dead_nodes:
-            self.dead_node_lst.append(node)
-            self.node_lst.remove(node)
+                        self.connection_lst.remove(connection)
+                        sender = connection[0]
+                        sender.remove_connection(connection)
             
 
 class Node:
